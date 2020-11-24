@@ -25,22 +25,39 @@ var chartGroup = svg.append("g")
 
 // intialize function to read from data.csv within D3 .then statement
 // call the functions to create visualizations 
-function init(data) {
+function init(data, active) {
+
+  //alert(active);
+
+  // removedemo
+  removeDemo();
   // output read object data to console
-  console.log(data);
+  //console.log(data);
   var circles = [];
   data.forEach(function (d) {
     oneCircle = {};
     state = d.abbr;
-    x_axis = parseFloat(d.poverty);
-    y_axis = parseFloat(d.healthcare);
+    if (active[0] == 1)
+      x_axis = parseFloat(d.age);
+    else if (active[0] == 2)
+      x_axis = parseInt(d.income);
+    else
+      x_axis = parseFloat(d.poverty);
+
+    if (active[1] == 1)
+      y_axis = parseFloat(d.smokes);
+    else if (active[1] == 2)
+      y_axis = parseFloat(d.obesity);
+    else
+      y_axis = parseFloat(d.healthcare);
+
     oneCircle = { state, x_axis, y_axis };
     circles.push(oneCircle);
   });
-  buildPlot(circles);
+  buildPlot(data, circles, active);
 }
 
-function buildPlot(circles) {
+function buildPlot(data, circles, active) {
 
   //console.log(circles);
 
@@ -72,17 +89,37 @@ function buildPlot(circles) {
   // and pass in the selector without breaking the chaining
   chartGroup.append("g").call(yAxis);
 
-  // add x axis title
-  chartGroup.append("text")
-    .attr("transform", `translate(${chartWidth / 2}, ${chartHeight + chartMargin.top + 16})`)
-    .classed("aText", true)
-    .text("In Poverty (%)");
+  // add x axis titles calling function
+  if (active[0] == 0)
+    addAxisTitle(data, "In Poverty (%)", "x", 0, 12, "active");
+  else
+    addAxisTitle(data, "In Poverty (%)", "x", 0, 12, "inactive");
 
-  // add y axis title
-  chartGroup.append("text")
-    .attr("transform", `translate(${-chartMargin.left + 62}, ${chartHeight / 2 -8}) rotate(-90)`)
-    .classed("aText", true)
-    .text("Lacks Healthcare (%)");
+  if (active[0] == 1)
+    addAxisTitle(data, "Age (median)", "x", 1, 32, "active");
+  else
+    addAxisTitle(data, "Age (median)", "x", 1, 32, "inactive");
+
+  if (active[0] == 2)
+    addAxisTitle(data, "Household Income (median)", "x", 2, 52, "active");
+  else
+    addAxisTitle(data, "Household Income (median)", "x", 2, 52, "inactive");
+
+  // add y axis titles calling function
+  if (active[1] == 0)
+    addAxisTitle(data, "Lacks Healthcare (%)", "y", 0, 8, "active");
+  else
+    addAxisTitle(data, "Lacks Healthcare (%)", "y", 0, 8, "inactive");
+
+  if (active[1] == 1)
+    addAxisTitle(data, "Smokes (%)", "y", 1, 6.7, "active");
+  else
+    addAxisTitle(data, "Smokes (%)", "y", 1, 6.7, "inactive");
+
+  if (active[1] == 2)
+    addAxisTitle(data, "Obese (%)", "y", 2, 5, "active");
+  else
+    addAxisTitle(data, "Obese (%)", "y", 2, 5, "inactive");
 
   // add circle data elements
   chartGroup.selectAll("svg")
@@ -107,9 +144,62 @@ function buildPlot(circles) {
 
 }
 
+// function to overwrite elements and contents on the demographics chart using d3.select
+// called from init() function
+function removeDemo() {
+  d3.select("g").selectAll("text").remove();
+  d3.select("g").selectAll("circle").remove();
+  d3.select("g").selectAll(".tick").remove();
+  d3.select("g").selectAll("g").remove();
+}
+
+function addAxisTitle(data, text, axis, axisdata, offset, status) {
+
+  // assign translation text string depending on the axis parameter passed in
+  if (axis == "x")
+    transText = `translate(${chartWidth / 2}, ${chartHeight + chartMargin.top + offset})`;
+  else
+    transText = `translate(${-chartMargin.left + (offset * offset)}, ${chartHeight / 2 - offset}) rotate(-90)`;
+
+  // add axis titles
+  chartGroup.append("text")
+    .attr("transform", transText)
+    .attr("id", axis+axisdata)
+    .classed(status, true)
+    .text(text)
+    // event listener for onclick event
+    .on("click", function () {
+      d3.select(this).classed(status, true)
+      if (d3.select(this).attr("id").charAt(0) == "x"){
+        if (d3.select("#y0").attr("class") == "active")
+          init(data, [axisdata, 0])
+        if (d3.select("#y1").attr("class") == "active")
+          init(data, [axisdata, 1])
+        if (d3.select("#y2").attr("class") == "active")
+          init(data, [axisdata, 2])
+      }
+      else {
+        if (d3.select("#x0").attr("class") == "active")
+          init(data, [0, axisdata])
+        if (d3.select("#x1").attr("class") == "active")
+          init(data, [1, axisdata])
+        if (d3.select("#x2").attr("class") == "active")
+          init(data, [2, axisdata])
+      }
+    })
+    // event listener for mouseover
+    .on("mouseover", function () {
+      d3.select(this).classed(status, true)
+    })
+    // event listener for mouseout
+    .on("mouseout", function () {
+      d3.select(this).classed(status, true);
+    });
+}
+
 
 // YOUR CODE HERE!
 console.log('This is censusDemo d3 js file - Reza Abasaltian');
 
 // Fetch the CSV data and call function init
-d3.csv("./data/data.csv").then(data => init(data));
+d3.csv("./data/data.csv").then(data => init(data, [0, 0]));
