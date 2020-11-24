@@ -37,6 +37,7 @@ function init(data, active) {
   data.forEach(function (d) {
     oneCircle = {};
     state = d.abbr;
+    stateFull = d.state;
     if (active[0] == 1)
       x_axis = parseFloat(d.age);
     else if (active[0] == 2)
@@ -51,7 +52,7 @@ function init(data, active) {
     else
       y_axis = parseFloat(d.healthcare);
 
-    oneCircle = { state, x_axis, y_axis };
+    oneCircle = { stateFull, state, x_axis, y_axis };
     circles.push(oneCircle);
   });
   buildPlot(data, circles, active);
@@ -90,36 +91,78 @@ function buildPlot(data, circles, active) {
   chartGroup.append("g").call(yAxis);
 
   // add x axis titles calling function
-  if (active[0] == 0)
+  if (active[0] == 0){
     addAxisTitle(data, "In Poverty (%)", "x", 0, 12, "active");
+    xtip = "Poverty: ";
+  }
   else
     addAxisTitle(data, "In Poverty (%)", "x", 0, 12, "inactive");
 
-  if (active[0] == 1)
+  if (active[0] == 1){
     addAxisTitle(data, "Age (median)", "x", 1, 32, "active");
+    xtip = "Age: ";
+  }
   else
     addAxisTitle(data, "Age (median)", "x", 1, 32, "inactive");
 
-  if (active[0] == 2)
+  if (active[0] == 2){
     addAxisTitle(data, "Household Income (median)", "x", 2, 52, "active");
+    xtip = "Income: ";
+  }
   else
     addAxisTitle(data, "Household Income (median)", "x", 2, 52, "inactive");
 
   // add y axis titles calling function
-  if (active[1] == 0)
+  if (active[1] == 0){
     addAxisTitle(data, "Lacks Healthcare (%)", "y", 0, 8, "active");
+    ytip = "Healthcare: ";
+  }
   else
     addAxisTitle(data, "Lacks Healthcare (%)", "y", 0, 8, "inactive");
 
-  if (active[1] == 1)
+  if (active[1] == 1){
     addAxisTitle(data, "Smokes (%)", "y", 1, 6.7, "active");
+    ytip = "Smokes: ";
+  }
   else
     addAxisTitle(data, "Smokes (%)", "y", 1, 6.7, "inactive");
 
-  if (active[1] == 2)
+  if (active[1] == 2){
     addAxisTitle(data, "Obese (%)", "y", 2, 5, "active");
+    ytip = "Obesity: ";
+  }
   else
     addAxisTitle(data, "Obese (%)", "y", 2, 5, "inactive");
+
+  // tooltip formatter to display data nicely
+  var incFormat = d3.format("$,");
+  var ageFormat = d3.format(".2");
+
+  // Step 1: Initialize Tooltip
+  if (xtip == "Income: "  )
+    var toolTip = d3.tip()
+    .attr("class", "d3-tip") 
+    .direction('e')
+    .html(function(d) {
+      return (`<strong>${d.stateFull}</strong><br>${xtip}${incFormat(d.x_axis)}<br>${ytip}${d.y_axis}%`);
+      });
+  else if (xtip == "Age: ")
+    var toolTip = d3.tip()
+    .attr("class", "d3-tip") 
+    .direction('e')
+    .html(function(d) {
+      return (`<strong>${d.stateFull}</strong><br>${xtip}${ageFormat(d.x_axis)}<br>${ytip}${d.y_axis}%`);
+      });
+  else
+    var toolTip = d3.tip()
+    .attr("class", "d3-tip") 
+    .direction('e')
+    .html(function(d) {
+      return (`<strong>${d.stateFull}</strong><br>${xtip}${d.x_axis}%<br>${ytip}${d.y_axis}%`);
+      });
+
+  // Step 2: Create the tooltip in chartGroup.
+  chartGroup.call(toolTip); 
 
   // add circle data elements
   chartGroup.selectAll("svg")
@@ -129,7 +172,9 @@ function buildPlot(data, circles, active) {
     .classed("stateCircle", true)
     .attr("cx", d => xScale(d.x_axis))
     .attr("cy", d => yScale(d.y_axis))
-    .attr("r", 9);
+    .attr("r", 9)
+    .on("mouseover", function(d) {toolTip.show(d, this);})
+    .on("mouseout", function(d) {toolTip.hide(d, this);});
 
   // add state abbreviations inside circle data elements
   chartGroup.selectAll("svg")
@@ -141,6 +186,8 @@ function buildPlot(data, circles, active) {
     .attr("dy", d => yScale(d.y_axis) + 3)
     .attr("font-size", 8)
     .text(d => d.state)
+    .on("mouseover", function(d) {toolTip.show(d, this);})
+    .on("mouseout", function(d) {toolTip.hide(d, this);});
 
 }
 
@@ -151,6 +198,7 @@ function removeDemo() {
   d3.select("g").selectAll("circle").remove();
   d3.select("g").selectAll(".tick").remove();
   d3.select("g").selectAll("g").remove();
+  d3.select(".d3-tip").remove();
 }
 
 function addAxisTitle(data, text, axis, axisdata, offset, status) {
@@ -165,25 +213,26 @@ function addAxisTitle(data, text, axis, axisdata, offset, status) {
   chartGroup.append("text")
     .attr("transform", transText)
     .attr("id", axis+axisdata)
+    .classed("aText", true)
     .classed(status, true)
     .text(text)
     // event listener for onclick event
     .on("click", function () {
       d3.select(this).classed(status, true)
       if (d3.select(this).attr("id").charAt(0) == "x"){
-        if (d3.select("#y0").attr("class") == "active")
+        if (d3.select("#y0").attr("class").substring(6,12) == "active")
           init(data, [axisdata, 0])
-        if (d3.select("#y1").attr("class") == "active")
+        if (d3.select("#y1").attr("class").substring(6,12)  == "active")
           init(data, [axisdata, 1])
-        if (d3.select("#y2").attr("class") == "active")
+        if (d3.select("#y2").attr("class").substring(6,12)  == "active")
           init(data, [axisdata, 2])
       }
       else {
-        if (d3.select("#x0").attr("class") == "active")
+        if (d3.select("#x0").attr("class").substring(6,12)  == "active")
           init(data, [0, axisdata])
-        if (d3.select("#x1").attr("class") == "active")
+        if (d3.select("#x1").attr("class").substring(6,12)  == "active")
           init(data, [1, axisdata])
-        if (d3.select("#x2").attr("class") == "active")
+        if (d3.select("#x2").attr("class").substring(6,12)  == "active")
           init(data, [2, axisdata])
       }
     })
