@@ -12,6 +12,26 @@ html {
 body {
   /* Padding bottom by footer height */
   padding-bottom: 80px;
+  background-color: azure;
+}
+
+h1 {
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+
+h5 {
+  font-weight: normal;
+  font-style: italic;
+}
+
+hr {
+  height: 2px;
+  background-color: darkblue;
+}
+
+.article {
+  margin-top: 30px;
 }
 
 #footer {
