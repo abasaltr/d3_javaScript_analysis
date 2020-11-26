@@ -56,6 +56,8 @@ function init(data, active) {
     circles.push(oneCircle);
   });
   buildPlot(data, circles, active);
+  addSummary(active);
+
 }
 
 function buildPlot(data, circles, active) {
@@ -199,6 +201,7 @@ function removeDemo() {
   d3.select("g").selectAll(".tick").remove();
   d3.select("g").selectAll("g").remove();
   d3.select(".d3-tip").remove();
+  d3.selectAll("p").remove();
 }
 
 function addAxisTitle(data, text, axis, axisdata, offset, status) {
@@ -245,6 +248,33 @@ function addAxisTitle(data, text, axis, axisdata, offset, status) {
       d3.select(this).classed(status, true);
     });
 }
+
+function addSummary(active){
+  //console.log(active); 
+  d3.csv("./data/summary.csv").then(function(articles) {
+
+    //console.log(articles);
+
+    summaries = [];
+
+    articles.forEach(function(data) {
+      data.x = +data.xid;
+      data.y = +data.yid;
+      data.pg = +data.paragraph;
+      if ((data.x == active[0]) && (data.y == active[1])) 
+        summaries.push(data.summary);
+    });
+
+    //console.log(summaries);
+
+    summaries.forEach(function(summary) {
+      d3.select(".article").append("p").text(summary);
+    });
+
+  });
+
+}
+
 
 
 // YOUR CODE HERE!
